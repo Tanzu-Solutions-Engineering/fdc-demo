@@ -6,12 +6,28 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
+import java.util.Random;
 
 public class Order implements Serializable {
 
+	private float amount;
+	private String city;
+	private String country;
+	private String creditCardNumber;
+	private String creditCardType;
+	private float latitude;
+	private float longitude;
+	private String retailerName;
+	private String state;
+	private String street;
+	private long timestamp;
+	private String transactionId;
+	private int zip;
+
+	/*
 	private String transactionId;
 	private String creditCardType;
-	private int creditCardNumber;
+	private String creditCardNumber;
 	private String retailerName;
 	private float amount;
 	private String street;
@@ -21,7 +37,33 @@ public class Order implements Serializable {
 	private String country;
 	private float latitude;
 	private float longitude;
-	private int timestamp;
+	private long timestamp;
+	*/
+	Order(){
+		Random random = new Random();
+		String state = HeatMap.states[random.nextInt(HeatMap.states.length)];
+		int value = (1+random.nextInt(4))*10;
+		this.setAmount(value);
+		this.setState(state);
+		
+		// Added by UT
+		int randomInt = (1+random.nextInt(4))*10;
+		
+		String transactionId = new String("txn") + String.valueOf(randomInt);
+		this.setTransactionId(transactionId);
+		this.setCreditCardType(new String("CCT") + String.valueOf(randomInt));
+		this.setCreditCardNumber(new String("CCN") + String.valueOf(randomInt));
+		this.setRetailerName(new String("RETAILER") + String.valueOf(randomInt));
+		this.setAmount(randomInt);
+		this.setStreet(new String("Street") + String.valueOf(randomInt));
+		this.setCity(new String("City") + String.valueOf(randomInt));
+		this.setZip(randomInt);
+		// this.setState(new String("State") + String.valueOf(randomInt));
+		this.setCountry(new String("Country") + String.valueOf(randomInt));
+		this.setLatitude(randomInt);
+		this.setLongitude(randomInt);
+		this.setTimestamp(randomInt);
+	}
 	
 	public String toString(){
 		String str = new String();
@@ -58,11 +100,11 @@ public class Order implements Serializable {
 		this.creditCardType = creditCardType;
 	}
 
-	public int getCreditCardNumber() {
+	public String getCreditCardNumber() {
 		return creditCardNumber;
 	}
 
-	public void setCreditCardNumber(int creditCardNumber) {
+	public void setCreditCardNumber(String creditCardNumber) {
 		this.creditCardNumber = creditCardNumber;
 	}
 
@@ -138,11 +180,11 @@ public class Order implements Serializable {
 		this.longitude = longitude;
 	}
 
-	public int getTimestamp() {
+	public long getTimestamp() {
 		return timestamp;
 	}
 
-	public void setTimestamp(int timestamp) {
+	public void setTimestamp(long timestamp) {
 		this.timestamp = timestamp;
 	}
 	

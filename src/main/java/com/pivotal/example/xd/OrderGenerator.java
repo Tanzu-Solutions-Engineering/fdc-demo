@@ -1,6 +1,5 @@
 package com.pivotal.example.xd;
 
-import java.io.IOException;
 import java.util.Random;
 
 public class OrderGenerator implements Runnable {
@@ -36,7 +35,7 @@ public class OrderGenerator implements Runnable {
 				String transactionId = new String("txn") + String.valueOf(randomInt);
 				order.setTransactionId(transactionId);
 				order.setCreditCardType(new String("CCT") + String.valueOf(randomInt));
-				order.setCreditCardNumber(randomInt);
+				order.setCreditCardNumber(new String("CCN") + String.valueOf(randomInt));
 				order.setRetailerName(new String("RETAILER") + String.valueOf(randomInt));
 				order.setAmount(randomInt);
 				order.setStreet(new String("Street") + String.valueOf(randomInt));

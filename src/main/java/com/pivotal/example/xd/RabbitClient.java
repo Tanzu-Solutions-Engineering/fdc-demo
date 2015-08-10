@@ -26,6 +26,9 @@ import org.springframework.cloud.CloudFactory;
 import org.springframework.cloud.service.ServiceInfo;
 import org.springframework.cloud.service.common.RabbitServiceInfo;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonIOException;
+import com.google.gson.JsonSyntaxException;
 import com.pivotal.example.xd.controller.OrderController;
 import com.rabbitmq.client.ConnectionFactory;
 
@@ -37,163 +40,194 @@ public class RabbitClient {
 	private Queue orderQueue;
 	private Queue orderProcQueue;
 	private RabbitTemplate rabbitTemplate;
-	
-	private static final String EXCHANGE_NAME="ORDERS_EXCHANGE";
+
+	private static final String EXCHANGE_NAME = "ORDERS_EXCHANGE";
 	private static final String ORDER_PROCESSING_QUEUE = "ORDERS_QUEUE";
 	private static final String ORDER_RECEIVING_QUEUE = "ORDERS_RECEIVING_QUEUE";
 
 	Connection connection;
 	private String rabbitURI;
-	
-	private RabbitClient(){
-		
-    	try{
-    		Cloud cloud = new CloudFactory().getCloud();
-	    	Iterator<ServiceInfo> services = cloud.getServiceInfos().iterator();
-	    	while (services.hasNext()){
-	    		ServiceInfo svc = services.next();
-	    		if (svc instanceof RabbitServiceInfo){
-	    			RabbitServiceInfo rabbitSvc = ((RabbitServiceInfo)svc);	    			
-	    			rabbitURI=rabbitSvc.getUri();
-	    			System.out.println("RabbitURI: " + rabbitURI);
-	    			try{
-	    				
-	    				ConnectionFactory factory = new ConnectionFactory();
-	    				factory.setUri(rabbitURI);
-	    				ccf = new CachingConnectionFactory(factory);
-	    				
-	    				connection = ccf.createConnection();
-	    
-	    				FanoutExchange fanoutExchange = new FanoutExchange(EXCHANGE_NAME, false, true);
-	    				
-	    				RabbitAdmin rabbitAdmin = new RabbitAdmin(ccf);
-	    				
-	    				rabbitAdmin.declareExchange(fanoutExchange);
-	    				
-	    				// orderQueue = new AnonymousQueue();
-	    				orderQueue = new Queue(ORDER_RECEIVING_QUEUE);
-	    				rabbitAdmin.declareQueue(orderQueue);
-	    				rabbitAdmin.declareBinding(BindingBuilder.bind(orderQueue).to(fanoutExchange));
-	    				
-	    				orderProcQueue = new Queue(ORDER_PROCESSING_QUEUE);
-	    				rabbitAdmin.declareQueue(orderProcQueue);
-	    				rabbitAdmin.declareBinding(BindingBuilder.bind(orderProcQueue).to(fanoutExchange));
-	    				
-	    				
-	    				rabbitTemplate = rabbitAdmin.getRabbitTemplate();
-	    				rabbitTemplate.setExchange(EXCHANGE_NAME);
-	    				rabbitTemplate.setConnectionFactory(ccf);
-	    				
-	    				rabbitTemplate.afterPropertiesSet();
-	    					    				
-	    			}
-	    			catch(Exception e){
-	    				throw new RuntimeException("Exception connecting to RabbitMQ",e);
-	    			}
-	    			
-	    		}
-	    	}
-    	}
-    	catch(CloudException ce){
-    		// means its not being deployed on Cloud
-    		logger.warn(ce.getMessage());
-    	}
-		
-		
+
+	private RabbitClient() {
+
+		try {
+			Cloud cloud = new CloudFactory().getCloud();
+			Iterator<ServiceInfo> services = cloud.getServiceInfos().iterator();
+			while (services.hasNext()) {
+				ServiceInfo svc = services.next();
+				if (svc instanceof RabbitServiceInfo) {
+					RabbitServiceInfo rabbitSvc = ((RabbitServiceInfo) svc);
+					rabbitURI = rabbitSvc.getUri();
+					System.out.println("RabbitURI: " + rabbitURI);
+					try {
+
+						ConnectionFactory factory = new ConnectionFactory();
+						factory.setUri(rabbitURI);
+						ccf = new CachingConnectionFactory(factory);
+
+						connection = ccf.createConnection();
+
+						FanoutExchange fanoutExchange = new FanoutExchange(
+								EXCHANGE_NAME, false, true);
+
+						RabbitAdmin rabbitAdmin = new RabbitAdmin(ccf);
+
+						rabbitAdmin.declareExchange(fanoutExchange);
+
+						// orderQueue = new AnonymousQueue();
+						orderQueue = new Queue(ORDER_RECEIVING_QUEUE);
+						rabbitAdmin.declareQueue(orderQueue);
+						rabbitAdmin.declareBinding(BindingBuilder.bind(
+								orderQueue).to(fanoutExchange));
+
+						orderProcQueue = new Queue(ORDER_PROCESSING_QUEUE);
+						rabbitAdmin.declareQueue(orderProcQueue);
+						rabbitAdmin.declareBinding(BindingBuilder.bind(
+								orderProcQueue).to(fanoutExchange));
+
+						rabbitTemplate = rabbitAdmin.getRabbitTemplate();
+						rabbitTemplate.setExchange(EXCHANGE_NAME);
+						rabbitTemplate.setConnectionFactory(ccf);
+
+						rabbitTemplate.afterPropertiesSet();
+
+					} catch (Exception e) {
+						throw new RuntimeException(
+								"Exception connecting to RabbitMQ", e);
+					}
+
+				}
+			}
+		} catch (CloudException ce) {
+			// means its not being deployed on Cloud
+			logger.warn(ce.getMessage());
+		}
+
 	}
-	
-	public static synchronized RabbitClient getInstance(){
-		if (instance==null){
-			instance = new RabbitClient(); 
+
+	public static synchronized RabbitClient getInstance() {
+		if (instance == null) {
+			instance = new RabbitClient();
 		}
 		return instance;
 	}
-	
-	public synchronized void post(Order order) throws IOException{
-		
-		rabbitTemplate.send(new Message(order.toBytes(), new MessageProperties()));
+
+	public synchronized void post(Order order) throws IOException {
+
+		rabbitTemplate.send(new Message(order.toBytes(),
+				new MessageProperties()));
 	}
 
-	public void startMessageListener(){
-		
-		SimpleMessageListenerContainer container = new SimpleMessageListenerContainer(ccf);		
+	public void startMessageListener() {
+
+		SimpleMessageListenerContainer container = new SimpleMessageListenerContainer(
+				ccf);
 		container.setQueues(orderQueue);
 		container.setMessageListener(new MessageListener() {
-			
+
 			@Override
 			public void onMessage(Message message) {
 				// System.out.println(message.getBody());
-				// Order order = Order.fromBytes(message.getBody()); // Error here
+				// Order order = Order.fromBytes(message.getBody()); // Error
+				// here
+
 				Order order = new Order();
 				String orderStr = new String(message.getBody());
-				System.out.println("Listening Order: " + orderStr);
+				logger.info("*** Listening Order: " + orderStr);
+				Gson gson = new Gson();
 				try {
-					order = new ObjectMapper().readValue(orderStr, Order.class);
-				} catch (JsonParseException e) {
-					// TODO Auto-generated catch block
+					logger.info("fromJson... " + orderStr);
+					order = gson.fromJson(orderStr, Order.class);
+					logger.info("registerOrder...");
+					OrderController.registerOrder(order);
+				} catch (JsonIOException e) {
+					logger.error("Listening JsonIOException..." + orderStr);
 					e.printStackTrace();
-				} catch (JsonMappingException e) {
-					// TODO Auto-generated catch block
+				} catch (JsonSyntaxException e) {
+					logger.error("Listening JsonSyntaxException..." + orderStr);
 					e.printStackTrace();
-				} catch (IOException e) {
-					// TODO Auto-generated catch block
+				} catch (Exception e) {
+					logger.error("Listening Exception..." + orderStr);
 					e.printStackTrace();
 				}
-				OrderController.registerOrder(order);
+				logger.info("*** Listening Order Object: ");
+				logger.info("Printing order... " + order);
+
+				/*
+				 * try {
+				 * 
+				 * order = new ObjectMapper().readValue(orderStr, Order.class);
+				 * } catch (JsonParseException e) { // TODO Auto-generated catch
+				 * block e.printStackTrace(); } catch (JsonMappingException e) {
+				 * // TODO Auto-generated catch block e.printStackTrace(); }
+				 * catch (IOException e) { // TODO Auto-generated catch block
+				 * e.printStackTrace(); }
+				 */
+				// OrderController.registerOrder(order);
 			}
 		});
 		container.setAcknowledgeMode(AcknowledgeMode.AUTO);
 		container.start();
-		
-		
+
 	}
 
-	public void startOrderProcessing(){
-		
-		SimpleMessageListenerContainer container = new SimpleMessageListenerContainer(ccf);		
+	public void startOrderProcessing() {
+
+		SimpleMessageListenerContainer container = new SimpleMessageListenerContainer(
+				ccf);
 		container.setQueues(orderProcQueue);
 		container.setMessageListener(new MessageListener() {
-			
+
 			@Override
 			public void onMessage(Message message) {
-				//for now simply log the order
-				//Order order = Order.fromBytes(message.getBody()); //Error here
-				//Order order = new Order();
-				//System.out.println("Processing Order: " + order);
-				//logger.info("Process Order: " + order.getState()+":"+order.getAmount());
+				// for now simply log the order
+				// Order order = Order.fromBytes(message.getBody()); //Error
+				// here
+				// Order order = new Order();
+				// System.out.println("Processing Order: " + order);
+				// logger.info("Process Order: " +
+				// order.getState()+":"+order.getAmount());
 
 				Order order = new Order();
 				String orderStr = new String(message.getBody());
-				System.out.println("Listening Order: " + orderStr);
+				logger.info("*** Processing Order String: " + orderStr);
 				try {
-					order = new ObjectMapper().readValue(orderStr, Order.class);
-				} catch (JsonParseException e) {
-					// TODO Auto-generated catch block
+					Gson gson = new Gson();
+					logger.info("Created new Gson object...");
+					order = gson.fromJson(orderStr, Order.class);
+					logger.info("*** Processing Order Object: " + order);
+				} catch (JsonIOException e) {
+					logger.error("Processing JsonIOException..." + orderStr);
 					e.printStackTrace();
-				} catch (JsonMappingException e) {
-					// TODO Auto-generated catch block
+				} catch (JsonSyntaxException e) {
+					logger.error("Processing JsonSyntaxException..." + orderStr);
 					e.printStackTrace();
-				} catch (IOException e) {
-					// TODO Auto-generated catch block
+				} catch (Exception e) {
+					logger.error("Processing Exception..." + orderStr);
 					e.printStackTrace();
 				}
+				/*
+				 * try { order = new ObjectMapper().readValue(orderStr,
+				 * Order.class); } catch (JsonParseException e) { // TODO
+				 * Auto-generated catch block e.printStackTrace(); } catch
+				 * (JsonMappingException e) { // TODO Auto-generated catch block
+				 * e.printStackTrace(); } catch (IOException e) { // TODO
+				 * Auto-generated catch block e.printStackTrace(); }
+				 */
 				// String orderStr = new String(message.getBody());
-				System.out.println("Processing Order: " + orderStr);
+				logger.info("Processing Order: " + orderStr);
 			}
 		});
 		container.setAcknowledgeMode(AcknowledgeMode.AUTO);
 		container.start();
-		
-		
+
 	}
 
-	
-	
-	public boolean isBound(){
-		return (rabbitURI!=null);
+	public boolean isBound() {
+		return (rabbitURI != null);
 	}
-	
-	public String getRabbitURI(){
+
+	public String getRabbitURI() {
 		return rabbitURI;
 	}
 }
