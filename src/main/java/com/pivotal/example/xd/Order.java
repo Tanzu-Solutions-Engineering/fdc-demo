@@ -10,80 +10,54 @@ import java.util.Random;
 
 public class Order implements Serializable {
 
-	private float amount;
-	private String city;
-	private String country;
-	private String creditCardNumber;
-	private String creditCardType;
-	private float latitude;
-	private float longitude;
-	private String retailerName;
-	private String state;
-	private String street;
-	private long timestamp;
 	private String transactionId;
+	private String creditCardType;
+	private String creditCardNumber;
+	private String retailerName;
+	private double amount;
+	private String street;
+	private String city;
 	private int zip;
+	private String state;
+	private String country;
+	private double latitude;
+	private double longitude;
+	private long timestamp;
 
-	/*
-	private String transactionId;
-	private String creditCardType;
-	private String creditCardNumber;
-	private String retailerName;
-	private float amount;
-	private String street;
-	private String city;
-	private int zip;
-	private String state;
-	private String country;
-	private float latitude;
-	private float longitude;
-	private long timestamp;
-	*/
-	Order(){
-		Random random = new Random();
-		String state = HeatMap.states[random.nextInt(HeatMap.states.length)];
-		int value = (1+random.nextInt(4))*10;
-		this.setAmount(value);
-		this.setState(state);
-		
-		// Added by UT
-		int randomInt = (1+random.nextInt(4))*10;
-		
-		String transactionId = new String("txn") + String.valueOf(randomInt);
-		this.setTransactionId(transactionId);
-		this.setCreditCardType(new String("CCT") + String.valueOf(randomInt));
-		this.setCreditCardNumber(new String("CCN") + String.valueOf(randomInt));
-		this.setRetailerName(new String("RETAILER") + String.valueOf(randomInt));
-		this.setAmount(randomInt);
-		this.setStreet(new String("Street") + String.valueOf(randomInt));
-		this.setCity(new String("City") + String.valueOf(randomInt));
-		this.setZip(randomInt);
-		// this.setState(new String("State") + String.valueOf(randomInt));
-		this.setCountry(new String("Country") + String.valueOf(randomInt));
-		this.setLatitude(randomInt);
-		this.setLongitude(randomInt);
-		this.setTimestamp(randomInt);
+	Order(String transactionId, String creditCardType, String creditCardNumber,
+			String retailerName, double amount, String street, String city,
+			int zip, String state, String country, double latitude,
+			double longitude, long timestamp) {
+
+		this.transactionId = transactionId;
+		this.creditCardType = creditCardType;
+		this.creditCardNumber = creditCardNumber;
+		this.retailerName = retailerName;
+		this.amount = amount;
+		this.street = street;
+		this.city = city;
+		this.zip = zip;
+		this.state = state;
+		this.country = country;
+		this.latitude = latitude;
+		this.longitude = longitude;
+		this.timestamp = timestamp;
+
 	}
-	
-	public String toString(){
+
+	Order() {
+	}
+
+	public String toString() {
 		String str = new String();
-		str = str + " [ " + transactionId + ", "
-				+ creditCardType + ", "
-				+ creditCardNumber + ", "
-				+ retailerName + ", "
-				+ amount + ", "
-				+ street + ", "
-				+ city + ", "
-				+ zip + ", "
-				+ state + ", "
-				+ country + ", "
-				+ latitude + ", "
-				+ longitude + ", "				
-				+ timestamp
-				+ " ] ";
+		str = str + " [ " + transactionId + ", " + creditCardType + ", "
+				+ creditCardNumber + ", " + retailerName + ", " + amount + ", "
+				+ street + ", " + city + ", " + zip + ", " + state + ", "
+				+ country + ", " + latitude + ", " + longitude + ", "
+				+ timestamp + " ] ";
 		return str;
 	}
-	
+
 	public String getTransactionId() {
 		return transactionId;
 	}
@@ -116,7 +90,7 @@ public class Order implements Serializable {
 		this.retailerName = retailerName;
 	}
 
-	public float getAmount() {
+	public double getAmount() {
 		return amount;
 	}
 
@@ -164,7 +138,7 @@ public class Order implements Serializable {
 		this.country = country;
 	}
 
-	public float getLatitude() {
+	public double getLatitude() {
 		return latitude;
 	}
 
@@ -172,7 +146,7 @@ public class Order implements Serializable {
 		this.latitude = latitude;
 	}
 
-	public float getLongitude() {
+	public double getLongitude() {
 		return longitude;
 	}
 
@@ -187,40 +161,38 @@ public class Order implements Serializable {
 	public void setTimestamp(long timestamp) {
 		this.timestamp = timestamp;
 	}
-	
-	   public byte[] toBytes() {
-	        byte[]bytes;
-	        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-	        try{
-	            ObjectOutputStream oos = new ObjectOutputStream(baos);
-	            oos.writeObject(this);
-	            oos.flush();
-	            oos.reset();
-	            bytes = baos.toByteArray();
-	            oos.close();
-	            baos.close();
-	        } catch(IOException e){
-	            throw new RuntimeException(e);
-	        }
-	        return bytes;
-	    }
 
-	    public static Order fromBytes(byte[] body) {
-	        Order obj = null;
-	        try {
-	            ByteArrayInputStream bis = new ByteArrayInputStream(body);
-	            ObjectInputStream ois = new ObjectInputStream(bis); // Error here
-	            obj = (Order) ois.readObject();
-	            ois.close();
-	            bis.close();
-	        }
-	        catch (IOException e) {
-	            e.printStackTrace();
-	        }
-	        catch (ClassNotFoundException ex) {
-	            ex.printStackTrace();
-	        }
-	        return obj;
-	    }	
-	
+	public byte[] toBytes() {
+		byte[] bytes;
+		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		try {
+			ObjectOutputStream oos = new ObjectOutputStream(baos);
+			oos.writeObject(this);
+			oos.flush();
+			oos.reset();
+			bytes = baos.toByteArray();
+			oos.close();
+			baos.close();
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
+		return bytes;
+	}
+
+	public static Order fromBytes(byte[] body) {
+		Order obj = null;
+		try {
+			ByteArrayInputStream bis = new ByteArrayInputStream(body);
+			ObjectInputStream ois = new ObjectInputStream(bis); // Error here
+			obj = (Order) ois.readObject();
+			ois.close();
+			bis.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		} catch (ClassNotFoundException ex) {
+			ex.printStackTrace();
+		}
+		return obj;
+	}
+
 }

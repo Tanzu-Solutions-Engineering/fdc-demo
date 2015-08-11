@@ -51,42 +51,57 @@ public class RabbitClient {
 	private RabbitClient() {
 
 		try {
+			logger.info("Getting cloud instance...");
 			Cloud cloud = new CloudFactory().getCloud();
 			Iterator<ServiceInfo> services = cloud.getServiceInfos().iterator();
 			while (services.hasNext()) {
 				ServiceInfo svc = services.next();
+				logger.info("Looking for rabbit service...");
 				if (svc instanceof RabbitServiceInfo) {
+					logger.info("Found rabbit instance...");
 					RabbitServiceInfo rabbitSvc = ((RabbitServiceInfo) svc);
 					rabbitURI = rabbitSvc.getUri();
 					System.out.println("RabbitURI: " + rabbitURI);
 					try {
-
+						logger.info("Getting connection factory...");
 						ConnectionFactory factory = new ConnectionFactory();
+						logger.info("Setting rabbitURI " + rabbitURI);
 						factory.setUri(rabbitURI);
+						logger.info("Creating caching connection factory");
 						ccf = new CachingConnectionFactory(factory);
-
+						logger.info("Creating connection");
 						connection = ccf.createConnection();
 
+						logger.info("Creating fanout exchange..." + EXCHANGE_NAME);
 						FanoutExchange fanoutExchange = new FanoutExchange(
 								EXCHANGE_NAME, false, true);
-
+						logger.info("Creating rabbit admin...");
 						RabbitAdmin rabbitAdmin = new RabbitAdmin(ccf);
-
+						logger.info("Declaring fanoutExchange...");
 						rabbitAdmin.declareExchange(fanoutExchange);
 
 						// orderQueue = new AnonymousQueue();
+						logger.info("Creating queue..." + ORDER_RECEIVING_QUEUE);
 						orderQueue = new Queue(ORDER_RECEIVING_QUEUE);
+						logger.info("Declaring order queue...");
 						rabbitAdmin.declareQueue(orderQueue);
+						logger.info("Binding order queue to fanout exchange...");
 						rabbitAdmin.declareBinding(BindingBuilder.bind(
 								orderQueue).to(fanoutExchange));
 
+						logger.info("Creating new queue..." + ORDER_PROCESSING_QUEUE);
 						orderProcQueue = new Queue(ORDER_PROCESSING_QUEUE);
+						logger.info("Declaring order processing queue...");
 						rabbitAdmin.declareQueue(orderProcQueue);
+						logger.info("Binding order processing queue to fanout exchange...");
 						rabbitAdmin.declareBinding(BindingBuilder.bind(
 								orderProcQueue).to(fanoutExchange));
 
+						logger.info("Getting rabbit admin template...");
 						rabbitTemplate = rabbitAdmin.getRabbitTemplate();
+						logger.info("Setting exchange on rabbit template..." + EXCHANGE_NAME);
 						rabbitTemplate.setExchange(EXCHANGE_NAME);
+						logger.info("Setting connection factory on rabbit template...");
 						rabbitTemplate.setConnectionFactory(ccf);
 
 						rabbitTemplate.afterPropertiesSet();
@@ -113,13 +128,13 @@ public class RabbitClient {
 	}
 
 	public synchronized void post(Order order) throws IOException {
-
+		logger.info("Sending order in byte form..." + order);
 		rabbitTemplate.send(new Message(order.toBytes(),
 				new MessageProperties()));
 	}
 
 	public void startMessageListener() {
-
+		logger.info("In startMessageListener...");
 		SimpleMessageListenerContainer container = new SimpleMessageListenerContainer(
 				ccf);
 		container.setQueues(orderQueue);
@@ -130,16 +145,26 @@ public class RabbitClient {
 				// System.out.println(message.getBody());
 				// Order order = Order.fromBytes(message.getBody()); // Error
 				// here
-
+				logger.info("In onMessage (startMessageListener)...");
 				Order order = new Order();
 				String orderStr = new String(message.getBody());
 				logger.info("*** Listening Order: " + orderStr);
+				orderStr = orderStr.replaceAll("\\r", "");
+				logger.info("*** Order string after replacing special chars: " + orderStr);
+				
+				logger.info("Creating new gson object...");
 				Gson gson = new Gson();
 				try {
 					logger.info("fromJson... " + orderStr);
 					order = gson.fromJson(orderStr, Order.class);
-					logger.info("registerOrder...");
-					OrderController.registerOrder(order);
+					if(order != null) {
+						logger.info("registerOrder..." + order);
+						OrderController.registerOrder(order);
+						logger.info("Printing order... " + order);
+					}	
+					else {
+						logger.error("Object Order is null");
+					}
 				} catch (JsonIOException e) {
 					logger.error("Listening JsonIOException..." + orderStr);
 					e.printStackTrace();
@@ -148,10 +173,9 @@ public class RabbitClient {
 					e.printStackTrace();
 				} catch (Exception e) {
 					logger.error("Listening Exception..." + orderStr);
+					logger.error("Error Message: " + e.getMessage());
 					e.printStackTrace();
 				}
-				logger.info("*** Listening Order Object: ");
-				logger.info("Printing order... " + order);
 
 				/*
 				 * try {
@@ -163,16 +187,18 @@ public class RabbitClient {
 				 * catch (IOException e) { // TODO Auto-generated catch block
 				 * e.printStackTrace(); }
 				 */
-				// OrderController.registerOrder(order);
+
 			}
 		});
+		logger.info("Setting acknowledge mode to AUTO...");
 		container.setAcknowledgeMode(AcknowledgeMode.AUTO);
+		logger.info("Starting container...");
 		container.start();
 
 	}
 
 	public void startOrderProcessing() {
-
+		logger.info("In startOrderProcessing...");
 		SimpleMessageListenerContainer container = new SimpleMessageListenerContainer(
 				ccf);
 		container.setQueues(orderProcQueue);
@@ -187,11 +213,14 @@ public class RabbitClient {
 				// System.out.println("Processing Order: " + order);
 				// logger.info("Process Order: " +
 				// order.getState()+":"+order.getAmount());
-
+				logger.info("In onMessage (startOrderProcessing)...");
 				Order order = new Order();
 				String orderStr = new String(message.getBody());
 				logger.info("*** Processing Order String: " + orderStr);
+				orderStr = orderStr.replaceAll("\\r", "");
+				logger.info("*** Order string after replacing special chars: " + orderStr);
 				try {
+					logger.info("Creating new gson object...");
 					Gson gson = new Gson();
 					logger.info("Created new Gson object...");
 					order = gson.fromJson(orderStr, Order.class);
@@ -218,7 +247,9 @@ public class RabbitClient {
 				logger.info("Processing Order: " + orderStr);
 			}
 		});
+		logger.info("Setting container acknowledge mode to AUTO");
 		container.setAcknowledgeMode(AcknowledgeMode.AUTO);
+		logger.info("Starting container...");
 		container.start();
 
 	}

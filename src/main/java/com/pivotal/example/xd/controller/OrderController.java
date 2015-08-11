@@ -47,6 +47,7 @@ public class OrderController {
     	client = RabbitClient.getInstance();
     	
     	for (int i=0; i<HeatMap.states.length; i++){
+    		logger.error("Adding orders to state: " + HeatMap.states[i]);
     		stateOrdersMap.put(HeatMap.states[i], new ArrayBlockingQueue<Order>(10));
     	}
     	
@@ -74,11 +75,24 @@ public class OrderController {
 
 	
 	public static synchronized void registerOrder(Order order){
+		if(order == null){
+			logger.error("registerOrder: Order is null");
+			return;
+		}
+		logger.error("Getting orders for state: " + order.getState());
 		Queue<Order> orderQueue = stateOrdersMap.get(order.getState());
-		if (!orderQueue.offer(order)){
-			orderQueue.remove();
-			orderQueue.add(order);
-		}				
+		if(orderQueue == null){
+			logger.error("registerOrder: orderQueue is null");
+			orderQueue = new ArrayBlockingQueue<Order>(10);
+			orderQueue.offer(order);
+			stateOrdersMap.put(order.getState(), orderQueue);
+		}
+		else {
+			if (!orderQueue.offer(order)){
+				orderQueue.remove();
+				orderQueue.add(order);
+			}		
+		}
 	}
     
 	@RequestMapping(value = "/")
@@ -137,6 +151,10 @@ public class OrderController {
     @RequestMapping(value="/killApp")
     public @ResponseBody String kill(){
 		logger.warn("Killing application instance");
+    	for(int jj=0; jj<HeatMap.states.length; jj++){
+    		logger.error("State: " + HeatMap.states[jj]
+    				+ " Amount: " + getOrderSum(HeatMap.states[jj]));    	
+    	}
 		System.exit(-1);    	
     	return "Killed";
 
