@@ -7,7 +7,6 @@
 			<name>Springframework Maven Repository</name>
 			<url>http://repo.springsource.org/milestone</url>
 		</repository>
-
 		<repository>
 			<id>spring-milestones</id>
 			<url>http://repo.spring.io/libs-milestone/</url>
