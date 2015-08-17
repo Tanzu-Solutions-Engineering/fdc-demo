@@ -1,6 +1,7 @@
 package com.pivotal.example.xd;
 
 import java.util.Random;
+import com.pivotal.example.xd.*;
 
 public class OrderGenerator implements Runnable {
 

@@ -1,5 +1,4 @@
 package com.pivotal.example.xd.controller;
-import com.pivotal.example.xd.*;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -18,6 +17,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
+import com.pivotal.example.xd.GemFireClient;
 import com.pivotal.example.xd.HeatMap;
 import com.pivotal.example.xd.Order;
 import com.pivotal.example.xd.OrderGenerator;
@@ -34,6 +34,7 @@ public class OrderController {
 	
 	private static Map<String,Queue<Order>> stateOrdersMap = new HashMap<String, Queue<Order>>();
 	private static RabbitClient client ;
+	private static GemFireClient gemClient;
 
 	boolean generatingData = false;
 	
@@ -45,7 +46,6 @@ public class OrderController {
     public OrderController(){
     	
     	client = RabbitClient.getInstance();
-    	
     	for (int i=0; i<HeatMap.states.length; i++){
     		logger.error("Adding orders to state: " + HeatMap.states[i]);
     		stateOrdersMap.put(HeatMap.states[i], new ArrayBlockingQueue<Order>(10));
@@ -57,6 +57,8 @@ public class OrderController {
         	client.startOrderProcessing();
     	}
     	
+    	gemClient = GemFireClient.getInstance();
+    	logger.error("******* GemFire: " + gemClient.toString());
     	
     }
 	

@@ -1,9 +1,9 @@
 package com.pivotal.example.xd;
 
+import org.springframework.stereotype.Service;
 import java.util.logging.Logger;
 
 import org.springframework.beans.factory.InitializingBean;
-import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service

@@ -4,11 +4,7 @@ import java.io.IOException;
 import java.util.Iterator;
 
 import org.apache.log4j.Logger;
-import org.codehaus.jackson.JsonParseException;
-import org.codehaus.jackson.map.JsonMappingException;
-import org.codehaus.jackson.map.ObjectMapper;
 import org.springframework.amqp.core.AcknowledgeMode;
-import org.springframework.amqp.core.AnonymousQueue;
 import org.springframework.amqp.core.BindingBuilder;
 import org.springframework.amqp.core.FanoutExchange;
 import org.springframework.amqp.core.Message;
@@ -56,11 +52,17 @@ public class RabbitClient {
 			Iterator<ServiceInfo> services = cloud.getServiceInfos().iterator();
 			while (services.hasNext()) {
 				ServiceInfo svc = services.next();
-				logger.info("Looking for rabbit service...");
+				logger.info("**** Looking for rabbit service..." + svc.getId() + 
+						" " + svc.toString());
+				
 				if (svc instanceof RabbitServiceInfo) {
 					logger.info("Found rabbit instance...");
 					RabbitServiceInfo rabbitSvc = ((RabbitServiceInfo) svc);
 					rabbitURI = rabbitSvc.getUri();
+					/*
+					ApplicationEnvironment ae= new ApplicationEnvironment();
+					System.out.println("Application Env: " + ae.toString());
+					*/
 					System.out.println("RabbitURI: " + rabbitURI);
 					try {
 						logger.info("Getting connection factory...");
