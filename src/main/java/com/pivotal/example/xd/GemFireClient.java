@@ -1,8 +1,8 @@
 package com.pivotal.example.xd;
 
 import java.net.URI;
-
-import io.pivotal.spring.cloud.service.common.GemfireServiceInfo;
+//import org.springframework.cloud;
+// import io.pivotal.spring.cloud.service.common.GemfireServiceInfo;
 
 import org.springframework.cloud.Cloud;
 import org.springframework.cloud.CloudFactory;
@@ -22,11 +22,11 @@ public class GemFireClient {
 		CloudFactory cloudFactory = new CloudFactory();
 		Cloud cloud = cloudFactory.getCloud();
 		GemfireServiceInfo myService = (GemfireServiceInfo) cloud.getServiceInfo("ut-gemfire");
-
+		/*
 		locators = myService.getLocators();
 		userName = myService.getUsername();
 		password = myService.getPassword();
-	
+		*/
 	}
 
 	public String toString(){
