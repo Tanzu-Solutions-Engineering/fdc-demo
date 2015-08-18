@@ -20,11 +20,13 @@ import org.springframework.cloud.Cloud;
 import org.springframework.cloud.CloudException;
 import org.springframework.cloud.CloudFactory;
 import org.springframework.cloud.service.ServiceInfo;
-import org.springframework.cloud.service.common.RabbitServiceInfo;
+import org.springframework.cloud.service.common.AmqpServiceInfo;
+//import org.springframework.cloud.service.common.RabbitServiceInfo;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonIOException;
 import com.google.gson.JsonSyntaxException;
+import com.pivotal.example.xd.Order;
 import com.pivotal.example.xd.controller.OrderController;
 import com.rabbitmq.client.ConnectionFactory;
 
@@ -55,9 +57,10 @@ public class RabbitClient {
 				logger.info("**** Looking for rabbit service..." + svc.getId() + 
 						" " + svc.toString());
 				
-				if (svc instanceof RabbitServiceInfo) {
+				if (svc instanceof AmqpServiceInfo) {
 					logger.info("Found rabbit instance...");
-					RabbitServiceInfo rabbitSvc = ((RabbitServiceInfo) svc);
+					//RabbitServiceInfo rabbitSvc = ((RabbitServiceInfo) svc);
+					AmqpServiceInfo rabbitSvc = ((AmqpServiceInfo) svc);
 					rabbitURI = rabbitSvc.getUri();
 					/*
 					ApplicationEnvironment ae= new ApplicationEnvironment();

@@ -1,7 +1,7 @@
 package com.pivotal.example.xd;
 
 import java.util.Random;
-import com.pivotal.example.xd.*;
+import com.pivotal.example.xd.HeatMap;
 
 public class OrderGenerator implements Runnable {
 
