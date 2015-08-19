@@ -9,8 +9,14 @@ import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.util.Random;
 
-public class Order implements Serializable {
+import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.PersistenceConstructor;
+import org.springframework.data.gemfire.mapping.Region;
 
+@Region("Orders")
+public class Order implements Serializable {
+	
+	@Id
 	private String transactionId;
 	private String creditCardType;
 	private String creditCardNumber;
@@ -25,6 +31,7 @@ public class Order implements Serializable {
 	private double longitude;
 	private long timestamp;
 
+	@PersistenceConstructor
 	Order(String transactionId, String creditCardType, String creditCardNumber,
 			String retailerName, double amount, String street, String city,
 			int zip, String state, String country, double latitude,
@@ -48,7 +55,8 @@ public class Order implements Serializable {
 
 	Order() {
 	}
-
+	
+	@Override
 	public String toString() {
 		String str = new String();
 		str = str + " [ " + transactionId + ", " + creditCardType + ", "

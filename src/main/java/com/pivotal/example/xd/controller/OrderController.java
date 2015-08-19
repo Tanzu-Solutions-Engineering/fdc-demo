@@ -3,6 +3,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Queue;
+import java.util.Vector;
 import java.util.concurrent.ArrayBlockingQueue;
 
 import javax.annotation.PreDestroy;
@@ -11,6 +12,8 @@ import javax.servlet.ServletContext;
 import org.apache.log4j.Logger;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.data.gemfire.repository.config.EnableGemfireRepositories;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -21,16 +24,22 @@ import com.pivotal.example.xd.GemFireClient;
 import com.pivotal.example.xd.HeatMap;
 import com.pivotal.example.xd.Order;
 import com.pivotal.example.xd.OrderGenerator;
+import com.pivotal.example.xd.OrderRepository;
 import com.pivotal.example.xd.RabbitClient;
 
 /**
  * Handles requests for the application home page.
  */
 @Controller
+@Configuration
+@EnableGemfireRepositories
 public class OrderController {
 	
 	@Autowired
 	ServletContext context;
+	
+	@Autowired
+	OrderRepository orderRepository;
 	
 	private static Map<String,Queue<Order>> stateOrdersMap = new HashMap<String, Queue<Order>>();
 	private static RabbitClient client ;
@@ -173,8 +182,19 @@ public class OrderController {
     	return heatMap;
 
     }
-    
-    
+
+    @RequestMapping(value="/getTransaction")
+    public @ResponseBody Order getTransaction(@RequestParam("transactionId") String transactionId){
+    	Order order = orderRepository.findByTransactionId(transactionId);
+    	return order;
+    }
+
+    @RequestMapping(value="/getTransactionsLessThan")
+    public @ResponseBody Vector<Order> getTransactionsLessThan(@RequestParam("amount") double amount){
+    	Vector<Order> orders = (Vector<Order>) orderRepository.findByAmountLessThan(amount);
+    	return orders;
+    }
+
     @PreDestroy
     public void shutdownThread(){
     	
